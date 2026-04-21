@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manipulando Dados</title>
+  <style>
+    :root {
+      --bg: #f7efe5;
+      --card: rgba(255, 251, 246, 0.92);
+      --text: #2d2118;
+      --muted: #7b6653;
+      --line: rgba(110, 78, 48, 0.16);
+      --accent: #c25a2c;
+      --accent-dark: #8e3c1b;
+      --soft: #f1e0cf;
+      --shadow: 0 24px 60px rgba(74, 42, 18, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 219, 172, 0.84), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(194, 90, 44, 0.24), transparent 34%),
+        linear-gradient(135deg, #f6eee4, #ead8c4);
+    }
+
+    .card {
+      width: min(600px, 100%);
+      padding: 32px;
+      border-radius: 28px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 2.7rem);
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .descricao {
+      margin-bottom: 24px;
+      color: var(--muted);
+    }
+
+    .acoes {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      flex: 1 1 260px;
+      min-height: 52px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      font-size: 1rem;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.78);
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: rgba(194, 90, 44, 0.55);
+      box-shadow: 0 0 0 4px rgba(194, 90, 44, 0.12);
+    }
+
+    button {
+      min-height: 52px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .curtir {
+      color: #fff8f1;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    }
+
+    .limpar {
+      color: var(--text);
+      background: var(--soft);
+      border: 1px solid rgba(110, 78, 48, 0.14);
+    }
+
+    .resultado {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 248, 239, 0.86);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 560px) {
+      .card {
+        padding: 24px;
+      }
+
+      .acoes {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Quem curtiu?</h1>
+    <p class="descricao">
+      Digite um nome, registre a curtida e mantenha a lista salva mesmo ap&oacute;s recarregar a p&aacute;gina.
+    </p>
+
+    <div class="acoes">
+      <input id="nome" type="text" placeholder="Digite um nome" />
+      <button id="curtir" class="curtir" type="button">Curtir</button>
+      <button id="limpar" class="limpar" type="button">Limpar</button>
+    </div>
+
+    <p id="mensagem" class="resultado" aria-live="polite">Ningu&eacute;m curtiu</p>
+  </main>
+
+  <script>
+    const CHAVE_CURTIDAS = "pessoas-que-curtiram";
+
+    const nomeInput = document.getElementById("nome");
+    const curtirButton = document.getElementById("curtir");
+    const limparButton = document.getElementById("limpar");
+    const mensagem = document.getElementById("mensagem");
+
+    const pessoasQueCurtiram = carregarCurtidas();
+
+    function normalizarNome(nome) {
+      return nome.toLocaleLowerCase("pt-BR");
+    }
+
+    function salvarCurtidas() {
+      localStorage.setItem(CHAVE_CURTIDAS, JSON.stringify(pessoasQueCurtiram));
+    }
+
+    function carregarCurtidas() {
+      const curtidasSalvas = localStorage.getItem(CHAVE_CURTIDAS);
+
+      if (!curtidasSalvas) {
+        return [];
+      }
+
+      try {
+        const nomes = JSON.parse(curtidasSalvas);
+
+        if (!Array.isArray(nomes)) {
+          return [];
+        }
+
+        const nomesUnicos = [];
+
+        nomes.forEach((nome) => {
+          if (typeof nome !== "string") {
+            return;
+          }
+
+          const nomeLimpo = nome.trim();
+          if (!nomeLimpo) {
+            return;
+          }
+
+          const nomeJaExiste = nomesUnicos.some((pessoa) => {
+            return normalizarNome(pessoa) === normalizarNome(nomeLimpo);
+          });
+
+          if (!nomeJaExiste) {
+            nomesUnicos.push(nomeLimpo);
+          }
+        });
+
+        return nomesUnicos;
+      } catch (erro) {
+        return [];
+      }
+    }
+
+    function atualizarMensagem() {
+      if (pessoasQueCurtiram.length === 0) {
+        mensagem.textContent = "Ningu\u00e9m curtiu";
+        return;
+      }
+
+      if (pessoasQueCurtiram.length === 1) {
+        mensagem.textContent = pessoasQueCurtiram[0] + " curtiu";
+        return;
+      }
+
+      if (pessoasQueCurtiram.length === 2) {
+        mensagem.textContent =
+          pessoasQueCurtiram[0] + " e " + pessoasQueCurtiram[1] + " curtiram";
+        return;
+      }
+
+      mensagem.textContent =
+        pessoasQueCurtiram[0] +
+        ", " +
+        pessoasQueCurtiram[1] +
+        " e mais " +
+        (pessoasQueCurtiram.length - 2) +
+        " pessoas curtiram";
+    }
+
+    function adicionarCurtida() {
+      const nome = nomeInput.value.trim();
+
+      if (!nome) {
+        nomeInput.focus();
+        return;
+      }
+
+      const nomeJaExiste = pessoasQueCurtiram.some((pessoa) => {
+        return normalizarNome(pessoa) === normalizarNome(nome);
+      });
+
+      if (!nomeJaExiste) {
+        pessoasQueCurtiram.push(nome);
+        salvarCurtidas();
+      }
+
+      nomeInput.value = "";
+      nomeInput.focus();
+      atualizarMensagem();
+    }
+
+    function limparCurtidas() {
+      pessoasQueCurtiram.length = 0;
+      localStorage.removeItem(CHAVE_CURTIDAS);
+      atualizarMensagem();
+      nomeInput.focus();
+    }
+
+    curtirButton.addEventListener("click", adicionarCurtida);
+    limparButton.addEventListener("click", limparCurtidas);
+
+    nomeInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        adicionarCurtida();
+      }
+    });
+
+    salvarCurtidas();
+    atualizarMensagem();
+  </script>
+</body>
+</html>
