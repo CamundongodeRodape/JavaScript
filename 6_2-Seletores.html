@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curtidas</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --card: rgba(255, 252, 247, 0.92);
+      --text: #2d2219;
+      --muted: #7b6957;
+      --line: rgba(110, 78, 48, 0.16);
+      --accent: #c65d2e;
+      --accent-dark: #8f3e1c;
+      --shadow: 0 24px 60px rgba(74, 42, 18, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 219, 172, 0.88), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(198, 93, 46, 0.22), transparent 34%),
+        linear-gradient(135deg, #f6f0e7, #eadac7);
+    }
+
+    .card {
+      width: min(560px, 100%);
+      padding: 32px;
+      border-radius: 28px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 2.6rem);
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    .descricao {
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .acoes {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      flex: 1 1 260px;
+      min-height: 52px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      font-size: 1rem;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.76);
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: rgba(198, 93, 46, 0.55);
+      box-shadow: 0 0 0 4px rgba(198, 93, 46, 0.12);
+    }
+
+    button {
+      min-height: 52px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff9f2;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    .resultado {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 248, 239, 0.86);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .card {
+        padding: 24px;
+      }
+
+      .acoes {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Quem curtiu?</h1>
+    <p class="descricao">
+      Digite um nome e clique no bot&atilde;o para atualizar a lista de curtidas.
+    </p>
+
+    <div class="acoes">
+      <input id="nome" type="text" placeholder="Digite um nome" />
+      <button id="curtir" type="button">Curtir</button>
+    </div>
+
+    <p id="mensagem" class="resultado" aria-live="polite">Ningu&eacute;m curtiu</p>
+  </main>
+
+  <script>
+    const pessoasQueCurtiram = [];
+
+    const nomeInput = document.getElementById("nome");
+    const curtirButton = document.getElementById("curtir");
+    const mensagem = document.getElementById("mensagem");
+
+    function atualizarMensagem() {
+      if (pessoasQueCurtiram.length === 0) {
+        mensagem.textContent = "Ningu\u00e9m curtiu";
+        return;
+      }
+
+      if (pessoasQueCurtiram.length === 1) {
+        mensagem.textContent = pessoasQueCurtiram[0] + " curtiu";
+        return;
+      }
+
+      if (pessoasQueCurtiram.length === 2) {
+        mensagem.textContent =
+          pessoasQueCurtiram[0] + " e " + pessoasQueCurtiram[1] + " curtiram";
+        return;
+      }
+
+      mensagem.textContent =
+        pessoasQueCurtiram[0] +
+        ", " +
+        pessoasQueCurtiram[1] +
+        " e mais " +
+        (pessoasQueCurtiram.length - 2) +
+        " pessoas curtiram";
+    }
+
+    function adicionarCurtida() {
+      const nome = nomeInput.value.trim();
+
+      if (!nome) {
+        nomeInput.focus();
+        return;
+      }
+
+      const nomeJaExiste = pessoasQueCurtiram.some((pessoa) => {
+        return pessoa.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR");
+      });
+
+      if (!nomeJaExiste) {
+        pessoasQueCurtiram.push(nome);
+      }
+
+      nomeInput.value = "";
+      nomeInput.focus();
+      atualizarMensagem();
+    }
+
+    curtirButton.addEventListener("click", adicionarCurtida);
+
+    nomeInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        adicionarCurtida();
+      }
+    });
+
+    atualizarMensagem();
+  </script>
+</body>
+</html>
